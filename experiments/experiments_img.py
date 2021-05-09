@@ -104,7 +104,8 @@ def run_and_save_experiments_img(device, path_to_config):
                                    non_linearity=model_config["non_linearity"],
                                    adjoint=True)
             else:
-                model = ResNet(data_dim, model_config["hidden_dim"],
+                model = ResNet(model_config["data_dim"],
+                               model_config["hidden_dim"],
                                model_config["num_layers"],
                                output_dim=output_dim,
                                is_img=True)
@@ -158,7 +159,16 @@ def run_and_save_experiments_img(device, path_to_config):
                         print("Unknown assertion error")
                         file_name_root = 'unknown'
 
-                    model_stats[file_name_root]["count"] += 1
+                    try:
+                        model_stats.get(file_name_root)
+                    except KeyError:
+                        model_stats[file_name_root] = dict()
+
+                    try:
+                        model_stats[file_name_root]["count"] += 1
+                    except KeyError:
+                        print(model_stats[file_name_root])
+                        model_stats[file_name_root]["count"] = 0
 
                     if len(trainer.buffer['loss']):
                         final_loss = np.mean(trainer.buffer['loss'])

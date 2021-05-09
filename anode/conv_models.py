@@ -14,8 +14,11 @@ class Conv2dTime(nn.Conv2d):
 
     def forward(self, t, x):
         # Task2
-        # TODO : implement this 
-
+        # TODO : implement this
+        b, c, h, w = x.shape
+        aug = torch.ones((b, 1, h, w)) * t
+        out = torch.cat([aug, x], 1)
+        return super(Conv2dTime, self).forward(out)
 
 class ConvODEFunc(nn.Module):
     """Convolutional block modeling the derivative of ODE system.
@@ -44,6 +47,38 @@ class ConvODEFunc(nn.Module):
         super(ConvODEFunc, self).__init__()
         # Task 2. 
         # TODO : implement this
+        self.device = device
+        self.img_size  = img_size
+        self.num_filters = num_filters
+        self.augment_dim = augment_dim
+        self.time_dependent = time_dependent
+        self.nfe = 0
+
+        if time_dependent:
+            self.cv1 = Conv2dTime(in_channels = self.img_size[0] + self.augment_dim,
+                                  out_channels = self.num_filters,
+                                  kernel_size = 1).to(self.device)
+            self.cv2 = Conv2dTime(in_channels = self.num_filters,
+                                  out_channels = self.num_filters,
+                                  kernel_size = 3, padding = 1).to(device)
+            self.cv3 = Conv2dTime(in_channels = self.num_filters,
+                                  out_channels = self.img_size[0] + self.augment_dim,
+                                  kernel_size = 1).to(device)
+        else:
+            self.cv1 = nn.Conv2d(in_channels = self.img_size[0] + self.augment_dim,
+                                 out_channels = self.num_filters,
+                                 kernel_size = 1).to(device)
+            self.cv2 = nn.Conv2d(in_channels = self.num_filters,
+                                 out_channels = self.num_filters,
+                                 kernel_size = 3, padding = 1).to(device)
+            self.cv3 = nn.Conv2d(in_channels = self.num_filters,
+                                 out_channels = self.img_size[0] + self.augment_dim,
+                                 kernel_size = 1).to(device)
+
+        if non_linearity == 'relu':
+            self.non_linearity = nn.ReLU().to(device)
+        elif non_linearity == 'softplus':
+            self.non_linearity = nn.Softplus().to(device)
 
     def forward(self, t, x):
         """
@@ -57,7 +92,20 @@ class ConvODEFunc(nn.Module):
         """
         # Task 2. 
         # TODO : implement this
-
+        self.nfe += 1
+        if self.time_dependent:
+            out = self.cv1(t.to(self.device), x.to(self.device))
+            out = self.non_linearity(out)
+            out = self.cv2(t.to(self.device), out)
+            out = self.non_linearity(out)
+            out = self.cv3(t.to(self.device), out)
+        else:
+            out = self.cv1(x.to(self.device))
+            out = self.non_linearity(out)
+            out = self.cv2(out)
+            out = self.non_linearity(out)
+            out = self.cv3(out)
+        return out
 
 class ConvODENet(nn.Module):
     """Creates an ODEBlock with a convolutional ODEFunc followed by a Linear
