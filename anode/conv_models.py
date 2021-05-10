@@ -3,6 +3,7 @@ import torch.nn as nn
 from anode.models import ODEBlock
 from torchdiffeq import odeint, odeint_adjoint
 
+device = "cuda:0" if torch.cuda.is_available() else 'cpu'
 
 class Conv2dTime(nn.Conv2d):
     """
@@ -16,7 +17,7 @@ class Conv2dTime(nn.Conv2d):
         # Task2
         # TODO : implement this
         b, c, h, w = x.shape
-        aug = torch.ones((b, 1, h, w)) * t
+        aug = torch.ones((b, 1, h, w)).to(device) * t
         out = torch.cat([aug, x], 1)
         return super(Conv2dTime, self).forward(out)
 
@@ -57,7 +58,7 @@ class ConvODEFunc(nn.Module):
         if time_dependent:
             self.cv1 = Conv2dTime(in_channels = self.img_size[0] + self.augment_dim,
                                   out_channels = self.num_filters,
-                                  kernel_size = 1).to(self.device)
+                                  kernel_size = 1).to(device)
             self.cv2 = Conv2dTime(in_channels = self.num_filters,
                                   out_channels = self.num_filters,
                                   kernel_size = 3, padding = 1).to(device)
@@ -155,12 +156,12 @@ class ConvODENet(nn.Module):
         self.tol = tol
 
         odefunc = ConvODEFunc(device, img_size, num_filters, augment_dim,
-                              time_dependent, non_linearity)
+                              time_dependent, non_linearity).to(device)
 
         self.odeblock = ODEBlock(device, odefunc, is_conv=True, tol=tol,
-                                 adjoint=adjoint)
+                                 adjoint=adjoint).to(device)
 
-        self.linear_layer = nn.Linear(self.flattened_dim, self.output_dim)
+        self.linear_layer = nn.Linear(self.flattened_dim, self.output_dim).to(device)
 
     def forward(self, x, return_features=False):
         features = self.odeblock(x)

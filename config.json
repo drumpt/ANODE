@@ -37,7 +37,7 @@
       "augment_dim": 5
   }],
   "training_config": {
-      "batch_size": 64,
+      "batch_size": 256,
       "record_freq": 20,
       "print_freq": 20,
       "epochs": 30

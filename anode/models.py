@@ -120,16 +120,16 @@ class ODEBlock(nn.Module):
         if self.odefunc.augment_dim > 0 and self.is_conv:
             b, c, h, w = x.shape
             aug = torch.zeros(b, self.odefunc.augment_dim, h, w).to(self.device)
-            x = torch.cat([x, aug], 1)
+            x = torch.cat([x, aug], 1).to(self.device)
         elif self.odefunc.augment_dim > 0 and not self.is_conv:
             b, d = x.shape
             aug = torch.zeros(b, self.odefunc.augment_dim).to(self.device)
-            x = torch.cat([x, aug], 1)
+            x = torch.cat([x, aug], 1).to(self.device)
         
         if self.adjoint:
-            out = odeint_adjoint(self.odefunc, x, integration_time, rtol = self.tol, atol = self.tol, method = "dopri5", options = {'max_num_steps' : MAX_NUM_STEPS})
+            out = odeint_adjoint(self.odefunc.to(self.device), x.to(self.device), integration_time.to(self.device), rtol = self.tol, atol = self.tol, method = "dopri5", options = {'max_num_steps' : MAX_NUM_STEPS})
         else:
-            out = odeint(self.odefunc, x, integration_time, rtol = self.tol, atol = self.tol, method = "dopri5", options = {'max_num_steps' : MAX_NUM_STEPS})
+            out = odeint(self.odefunc.to(self.device), x.to(self.device), integration_time.to(self.device), rtol = self.tol, atol = self.tol, method = "dopri5", options = {'max_num_steps' : MAX_NUM_STEPS})
 
         if eval_times == None:
             return out[1] # t = 1
