@@ -106,10 +106,21 @@ class ODEBlock(nn.Module):
         super(ODEBlock, self).__init__()
         # Task 1.
         # TODO : implement this
+        self.device = device
+        self.odefunc = odefunc
+        self.is_conv = is_conv
+        self.tol = tol
+        self.adjoint = adjoint
 
     def forward(self, x, eval_times=None):
         # Task 1. 
         # TODO : implement this
+        if self.is_conv:
+            return self.odefunc(x.to(device)).to(device)
+        elif self.adjoint:
+            return odeint_adjoint(self.odefunc(x.to(device)), eval_times, atol = self.tol, ).to(device)
+        else:
+            return odeint(self.odefunc(x.to(device)), eval_times).to(device)
 
     def trajectory(self, x, timesteps):
         """Returns ODE trajectory.

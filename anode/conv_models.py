@@ -15,6 +15,7 @@ class Conv2dTime(nn.Conv2d):
     def forward(self, t, x):
         # Task2
         # TODO : implement this 
+        if self.time_dependent:
 
 
 class ConvODEFunc(nn.Module):
@@ -44,6 +45,15 @@ class ConvODEFunc(nn.Module):
         super(ConvODEFunc, self).__init__()
         # Task 2. 
         # TODO : implement this
+        self.device = device
+        self.img_size  = img_size
+        self.num_filters = num_filters
+        self.augment_dim = augment_dim
+        self.time_dependent = time_dependent
+        self.non_linearity = non_linearity
+
+        if time_dependent:
+            self.cv1 = nn.Conv2d(self.img_size)
 
     def forward(self, t, x):
         """
@@ -57,7 +67,8 @@ class ConvODEFunc(nn.Module):
         """
         # Task 2. 
         # TODO : implement this
-
+        if self.time_dependent:
+            self.
 
 class ConvODENet(nn.Module):
     """Creates an ODEBlock with a convolutional ODEFunc followed by a Linear
