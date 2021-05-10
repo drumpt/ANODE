@@ -49,7 +49,7 @@ class ODEFunc(nn.Module):
         self.fc3 = nn.Linear(hidden_dim, self.input_dim)
 
         if non_linearity == 'relu':
-            self.non_linearity = nn.ReLU(inplace=True)
+            self.non_linearity = nn.ReLU()
         elif non_linearity == 'softplus':
             self.non_linearity = nn.Softplus()
 
@@ -115,12 +115,26 @@ class ODEBlock(nn.Module):
     def forward(self, x, eval_times=None):
         # Task 1. 
         # TODO : implement this
-        if self.is_conv:
-            return self.odefunc(x.to(device)).to(device)
-        elif self.adjoint:
-            return odeint_adjoint(self.odefunc(x.to(device)), eval_times, atol = self.tol, ).to(device)
+        integration_time = torch.tensor([0, 1]).float() if eval_times == None else torch.tensor(eval_times).float()
+
+        if self.odefunc.augment_dim > 0 and self.is_conv:
+            b, c, h, w = x.shape
+            aug = torch.zeros(b, self.odefunc.augment_dim, h, w).to(self.device)
+            x = torch.cat([x, aug], 1).to(self.device)
+        elif self.odefunc.augment_dim > 0 and not self.is_conv:
+            b, d = x.shape
+            aug = torch.zeros(b, self.odefunc.augment_dim).to(self.device)
+            x = torch.cat([x, aug], 1).to(self.device)
+        
+        if self.adjoint:
+            out = odeint_adjoint(self.odefunc.to(self.device), x.to(self.device), integration_time.to(self.device), rtol = self.tol, atol = self.tol, method = "dopri5", options = {'max_num_steps' : MAX_NUM_STEPS})
         else:
-            return odeint(self.odefunc(x.to(device)), eval_times).to(device)
+            out = odeint(self.odefunc.to(self.device), x.to(self.device), integration_time.to(self.device), rtol = self.tol, atol = self.tol, method = "dopri5", options = {'max_num_steps' : MAX_NUM_STEPS})
+
+        if eval_times == None:
+            return out[1] # t = 1
+        else:
+            return out
 
     def trajectory(self, x, timesteps):
         """Returns ODE trajectory.
