@@ -58,6 +58,11 @@ python main_experiment_img.py config_img.json
 
 where the specifications for the experiment can be found in `config_img.json`.
 
+## Experimental Results
+<img src="https://github.com/EmilienDupont/augmented-neural-odes/raw/master/imgs/result_1.png" width="500">
+
+<img src="https://github.com/EmilienDupont/augmented-neural-odes/raw/master/imgs/result_2.png" width="500">
+
 ## Demos
 
 We also provide two demo notebooks that show how to reproduce some of the results and figures from the paper.
